@@ -1,0 +1,663 @@
+
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>WHIZZY PLANNER 2026</title>
+    
+    <!-- PWA -->
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#000000">
+    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>⏳</text></svg>">
+    
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        whizzy: {
+                            red: '#DC2626',
+                            dark: '#050505',
+                            surface: '#121212',
+                            input: '#1E1E1E',
+                            text: '#E0E0E0'
+                        }
+                    },
+                    fontFamily: {
+                        sans: ['Roboto', 'sans-serif'],
+                        serif: ['Playfair Display', 'serif']
+                    }
+                }
+            }
+        }
+    </script>
+    
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&family=Playfair+Display:ital@1&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+
+    <style>
+        body { background-color: #000; color: #E0E0E0; font-family: 'Roboto', sans-serif; overflow: hidden; }
+        
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-track { background: #000; }
+        ::-webkit-scrollbar-thumb { background: #333; border-radius: 3px; }
+        ::-webkit-scrollbar-thumb:hover { background: #DC2626; }
+
+        /* Floating Label */
+        .floating-input { position: relative; margin-bottom: 1.5rem; }
+        .floating-input input, .floating-input select, .floating-input textarea {
+            width: 100%; background: #1E1E1E; border: 1px solid #333; color: white;
+            padding: 1rem 0.75rem 0.5rem; border-radius: 4px; outline: none; transition: border-color 0.2s;
+        }
+        .floating-input input:focus { border-color: #DC2626; }
+        .floating-input label {
+            position: absolute; top: 0.75rem; left: 0.75rem; color: #888; pointer-events: none;
+            transition: 0.2s ease all; font-size: 1rem;
+        }
+        .floating-input input:focus ~ label, .floating-input input:not(:placeholder-shown) ~ label,
+        .floating-input select:focus ~ label, .floating-input select:valid ~ label {
+            top: 0.2rem; font-size: 0.7rem; color: #DC2626;
+        }
+
+        /* Animations */
+        @keyframes pulse-red { 0% { box-shadow: 0 0 0 0 rgba(220, 38, 38, 0.7); } 70% { box-shadow: 0 0 0 10px rgba(220, 38, 38, 0); } 100% { box-shadow: 0 0 0 0 rgba(220, 38, 38, 0); } }
+        .pulse-btn { animation: pulse-red 2s infinite; }
+        
+        @keyframes spin-hourglass { 0% { transform: rotate(0deg); } 90% { transform: rotate(0deg); } 100% { transform: rotate(180deg); } }
+        .logo-anim { animation: spin-hourglass 5s infinite ease-in-out; }
+
+        /* Grid */
+        .time-slot { border-bottom: 1px solid #222; height: 60px; position: relative; }
+        .time-label { position: absolute; left: 5px; top: 5px; font-size: 0.7rem; color: #666; }
+        .event-chip { position: absolute; height: 90%; top: 5%; border-radius: 4px; padding: 2px 5px; font-size: 0.75rem; overflow: hidden; cursor: pointer; transition: transform 0.1s; box-shadow: 0 2px 4px rgba(0,0,0,0.5); }
+        .event-chip:hover { transform: scale(1.02); z-index: 10; }
+        
+        .loading-overlay { position: fixed; top:0; left:0; width:100%; height:100%; background: #000; z-index: 9999; display: flex; flex-direction: column; justify-content: center; align-items: center; }
+    </style>
+</head>
+<body>
+
+    <!-- LOADING SCREEN -->
+    <div id="loader" class="loading-overlay hidden">
+        <div class="text-6xl mb-4 logo-anim">⏳</div>
+        <div class="text-xl font-light tracking-widest text-whizzy-red">WHIZZY PLANNER</div>
+        <div class="w-64 h-1 bg-gray-900 mt-4 rounded overflow-hidden">
+            <div id="progress-bar" class="h-full bg-whizzy-red w-0 transition-all duration-300"></div>
+        </div>
+        <p id="loader-text" class="text-xs text-gray-500 mt-2">Inicializando sistema...</p>
+    </div>
+
+    <!-- AUTH SCREEN -->
+    <div id="auth-screen" class="h-screen w-full flex items-center justify-center p-4">
+        <div class="w-full max-w-md bg-whizzy-surface p-8 rounded-lg shadow-2xl border border-gray-800">
+            <div class="text-center mb-8">
+                <div class="text-5xl mb-2 inline-block logo-anim">⏳</div>
+                <h1 class="text-2xl font-bold tracking-wider">WHIZZY PLANNER <span class="text-whizzy-red">2026</span></h1>
+            </div>
+
+            <!-- TABS -->
+            <div class="flex mb-6 border-b border-gray-800">
+                <button onclick="switchAuth('login')" id="tab-login" class="flex-1 pb-2 text-whizzy-red border-b-2 border-whizzy-red font-bold">ENTRAR</button>
+                <button onclick="switchAuth('register')" id="tab-register" class="flex-1 pb-2 text-gray-500">ATIVAR LICENÇA</button>
+            </div>
+
+            <!-- LOGIN FORM -->
+            <form id="form-login" onsubmit="handleLogin(event)">
+                <div class="floating-input">
+                    <input type="email" id="login-email" placeholder=" " required>
+                    <label>E-mail</label>
+                </div>
+                <div class="floating-input">
+                    <input type="password" id="login-pass" placeholder=" " required>
+                    <label>Senha</label>
+                </div>
+                <button type="submit" class="w-full bg-whizzy-red hover:bg-red-700 text-white font-bold py-3 rounded transition pulse-btn">ACESSAR SISTEMA</button>
+            </form>
+
+            <!-- REGISTER FORM -->
+            <form id="form-register" class="hidden" onsubmit="handleRegister(event)">
+                <div class="floating-input">
+                    <input type="text" id="reg-key" placeholder=" " required style="text-transform: uppercase;">
+                    <label>Chave de Ativação (WZ26-...)</label>
+                </div>
+                <div class="floating-input">
+                    <input type="text" id="reg-name" placeholder=" " required>
+                    <label>Nome Completo</label>
+                </div>
+                <div class="floating-input">
+                    <input type="email" id="reg-email" placeholder=" " required>
+                    <label>E-mail (Gmail Recomendado)</label>
+                </div>
+                <div class="floating-input">
+                    <input type="password" id="reg-pass" placeholder=" " required>
+                    <label>Criar Senha</label>
+                </div>
+                <button type="submit" class="w-full bg-white text-black hover:bg-gray-200 font-bold py-3 rounded transition">ATIVAR E INICIAR</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- MAIN APP -->
+    <div id="app-screen" class="h-screen w-full flex flex-col hidden">
+        
+        <!-- HEADER -->
+        <header class="h-16 bg-whizzy-surface border-b border-gray-800 flex items-center justify-between px-4 z-50">
+            <div class="flex items-center gap-3">
+                <button class="md:hidden text-white" onclick="toggleMobileMenu()"><i class="material-icons">menu</i></button>
+                <div class="text-2xl logo-anim cursor-pointer" onclick="showVibe()">⏳</div>
+                <div class="hidden md:block font-bold tracking-wider">WHIZZY <span class="text-whizzy-red">2026</span></div>
+            </div>
+            
+            <div class="flex items-center gap-4">
+                <div class="text-sm text-right hidden md:block">
+                    <div id="header-date" class="font-bold text-white">Carregando...</div>
+                    <div id="header-greeting" class="text-xs text-gray-500">Bom dia</div>
+                </div>
+                <button onclick="showVibe()" class="text-whizzy-red hover:text-white transition"><i class="material-icons">bolt</i></button>
+                <div class="relative group">
+                    <img id="header-avatar" src="https://via.placeholder.com/40" class="w-10 h-10 rounded-full border border-gray-700 cursor-pointer object-cover">
+                    <!-- Dropdown Desktop -->
+                    <div class="absolute right-0 top-12 w-48 bg-whizzy-surface border border-gray-800 shadow-xl rounded hidden group-hover:block">
+                        <a href="#" onclick="openProfile()" class="block px-4 py-2 hover:bg-whizzy-input">Perfil</a>
+                        <a href="#" onclick="doLogout()" class="block px-4 py-2 text-whizzy-red hover:bg-whizzy-input">Sair</a>
+                    </div>
+                </div>
+            </div>
+        </header>
+
+        <!-- BODY -->
+        <div class="flex-1 flex overflow-hidden relative">
+            
+            <!-- MOBILE MENU OVERLAY -->
+            <div id="mobile-menu" class="absolute inset-0 bg-black/95 z-40 transform -translate-x-full transition-transform duration-300 md:hidden flex flex-col p-8">
+                <button onclick="toggleMobileMenu()" class="self-end text-white mb-8"><i class="material-icons text-3xl">close</i></button>
+                <a href="#" onclick="setView('day'); toggleMobileMenu()" class="text-2xl mb-6 font-bold">Agenda Diária</a>
+                <a href="#" onclick="openProfile(); toggleMobileMenu()" class="text-2xl mb-6 text-gray-400">Meu Perfil</a>
+                <a href="#" onclick="doLogout()" class="text-2xl mt-auto text-whizzy-red">Sair</a>
+            </div>
+
+            <!-- CALENDAR NAV (LEFT COL DESKTOP) -->
+            <aside class="w-64 bg-whizzy-surface border-r border-gray-800 hidden md:flex flex-col p-4">
+                <div id="mini-calendar" class="mb-8">
+                    <!-- Simplificado: Apenas Navegação -->
+                    <div class="flex justify-between items-center mb-4">
+                        <button onclick="changeDay(-1)" class="p-1 hover:bg-gray-800 rounded"><i class="material-icons">chevron_left</i></button>
+                        <span id="nav-date-display" class="font-bold">Hoje</span>
+                        <button onclick="changeDay(1)" class="p-1 hover:bg-gray-800 rounded"><i class="material-icons">chevron_right</i></button>
+                    </div>
+                    <input type="date" id="date-picker" class="w-full bg-whizzy-input text-white p-2 rounded" onchange="jumpToDate(this.value)">
+                </div>
+                <div class="mt-auto">
+                    <button onclick="generatePDF()" class="w-full border border-gray-700 hover:bg-gray-800 py-2 rounded flex items-center justify-center gap-2">
+                        <i class="material-icons text-sm">picture_as_pdf</i> Relatório
+                    </button>
+                </div>
+            </aside>
+
+            <!-- MAIN GRID (CENTER) -->
+            <main class="flex-1 overflow-y-auto relative bg-black" id="planner-container">
+                <!-- GRID RENDERED BY JS -->
+                <div id="planner-grid" class="pb-20 md:pb-0"></div>
+            </main>
+
+        </div>
+    </div>
+
+    <!-- MODAL EVENT -->
+    <div id="modal-event" class="fixed inset-0 bg-black/80 z-50 hidden flex items-center justify-center p-4">
+        <div class="bg-whizzy-surface w-full max-w-lg rounded-lg border border-gray-700 shadow-2xl overflow-hidden">
+            <div class="p-4 border-b border-gray-800 flex justify-between items-center bg-whizzy-input">
+                <h3 class="font-bold text-lg" id="modal-title-text">Novo Compromisso</h3>
+                <button onclick="closeModal('modal-event')" class="text-gray-500 hover:text-white"><i class="material-icons">close</i></button>
+            </div>
+            <form id="form-event" class="p-6" onsubmit="saveEvent(event)">
+                <input type="hidden" id="evt-id">
+                
+                <div class="floating-input">
+                    <input type="text" id="evt-title" placeholder=" " required>
+                    <label>O que você vai fazer?</label>
+                </div>
+
+                <div class="flex gap-4">
+                    <div class="floating-input flex-1">
+                        <select id="evt-start-h" required class="appearance-none"></select>
+                        <label>Hora</label>
+                    </div>
+                    <div class="floating-input flex-1">
+                        <select id="evt-start-m" required class="appearance-none">
+                            <option value="00">00</option><option value="15">15</option>
+                            <option value="30">30</option><option value="45">45</option>
+                        </select>
+                        <label>Min</label>
+                    </div>
+                    <div class="floating-input flex-1">
+                        <select id="evt-duration" required class="appearance-none">
+                            <option value="15">15m</option><option value="30">30m</option>
+                            <option value="60">1h</option><option value="90">1h30</option>
+                            <option value="120">2h</option>
+                        </select>
+                        <label>Duração</label>
+                    </div>
+                </div>
+
+                <div class="flex gap-4">
+                    <div class="floating-input flex-1">
+                        <select id="evt-priority" class="appearance-none">
+                            <option value="0">0 - Crítica (Alta)</option>
+                            <option value="1">1 - Alta</option>
+                            <option value="2">2 - Média</option>
+                            <option value="3">3 - Normal</option>
+                            <option value="4">4 - Baixa</option>
+                            <option value="5">5 - Opcional</option>
+                        </select>
+                        <label>Prioridade</label>
+                    </div>
+                    <div class="floating-input flex-1">
+                        <select id="evt-status" class="appearance-none">
+                            <option value="OPEN">Aberto</option>
+                            <option value="IN_PROGRESS">Iniciado</option>
+                            <option value="DONE">Finalizado</option>
+                            <option value="MOVED">Transferido</option>
+                        </select>
+                        <label>Status</label>
+                    </div>
+                </div>
+
+                <div class="floating-input">
+                    <textarea id="evt-notes" placeholder=" " rows="3"></textarea>
+                    <label>Observações</label>
+                </div>
+
+                <div class="flex justify-end gap-3 mt-4">
+                    <button type="button" onclick="deleteEvent()" id="btn-delete" class="text-red-500 hover:text-red-400 px-4 hidden">Excluir</button>
+                    <button type="submit" class="bg-whizzy-red text-white font-bold py-2 px-6 rounded hover:bg-red-700">SALVAR</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- MODAL VIBES -->
+    <div id="modal-vibe" class="fixed inset-0 bg-black/90 z-50 hidden flex items-center justify-center p-4" onclick="closeModal('modal-vibe')">
+        <div class="max-w-2xl text-center" onclick="event.stopPropagation()">
+            <div class="text-6xl mb-6 logo-anim mx-auto">⏳</div>
+            <h2 class="text-3xl md:text-5xl font-serif text-whizzy-red mb-8 italic" id="vibe-text">
+                "O futuro pertence àqueles que se preparam hoje."
+            </h2>
+            <div class="text-gray-500 text-sm">GOOD VIBES DO DIA</div>
+        </div>
+    </div>
+
+    <!-- JAVASCRIPT LOGIC -->
+    <script>
+        // =================================================================
+        // ⚠️⚠️⚠️ CONFIGURAÇÃO PRINCIPAL ⚠️⚠️⚠️
+        // =================================================================
+        const GAS_URL = 'https://script.google.com/macros/s/AKfycbxntWnGTPhNxW4jyRV4dHYoWPOcT0hDqWGMo5-DF2qkU2Wgl6_YC8a7-tIW6MczcRxd2w/exec'; 
+        // 👆👆👆 COLE A URL DO SCRIPT (PASSO 1) AQUI ENTRE AS ASPAS 👆👆👆
+        // =================================================================
+        
+        // STATE
+        let STATE = {
+            user: null,
+            events: [],
+            currentDate: new Date(),
+            vibeId: 1
+        };
+
+        // INIT
+        window.onload = () => {
+            const token = localStorage.getItem('whizzy_token');
+            if (token) {
+                // Tenta login silencioso ou fetch profile
+                loadProfile(token);
+            } else {
+                document.getElementById('auth-screen').classList.remove('hidden');
+            }
+            populateTimeSelects();
+            updateDateDisplay();
+            initServiceWorker();
+        };
+
+        // --- AUTH ---
+        function switchAuth(type) {
+            document.getElementById('form-login').classList.toggle('hidden', type !== 'login');
+            document.getElementById('form-register').classList.toggle('hidden', type !== 'register');
+            document.getElementById('tab-login').className = type === 'login' ? 'flex-1 pb-2 text-whizzy-red border-b-2 border-whizzy-red font-bold' : 'flex-1 pb-2 text-gray-500';
+            document.getElementById('tab-register').className = type === 'register' ? 'flex-1 pb-2 text-whizzy-red border-b-2 border-whizzy-red font-bold' : 'flex-1 pb-2 text-gray-500';
+        }
+
+        async function handleLogin(e) {
+            e.preventDefault();
+            showLoader(true, "Autenticando...");
+            const email = document.getElementById('login-email').value;
+            const pass = document.getElementById('login-pass').value;
+
+            try {
+                const res = await apiCall({ action: 'LOGIN', payload: { email, password: pass } });
+                loginSuccess(res.data);
+            } catch (err) {
+                alert("Erro: " + err.message);
+                showLoader(false);
+            }
+        }
+
+        async function handleRegister(e) {
+            e.preventDefault();
+            if(!confirm("Confirma os dados? A chave será vinculada permanentemente a este e-mail.")) return;
+
+            showLoader(true, "Criando seu universo (pode levar 30s)...");
+            const payload = {
+                key: document.getElementById('reg-key').value.toUpperCase(),
+                name: document.getElementById('reg-name').value,
+                email: document.getElementById('reg-email').value,
+                password: document.getElementById('reg-pass').value
+            };
+
+            try {
+                const res = await apiCall({ action: 'REGISTER', payload });
+                loginSuccess(res.data);
+            } catch (err) {
+                alert("Erro no cadastro: " + err.message);
+                showLoader(false);
+            }
+        }
+
+        function loginSuccess(data) {
+            STATE.user = data;
+            localStorage.setItem('whizzy_token', data.token);
+            
+            document.getElementById('auth-screen').classList.add('hidden');
+            document.getElementById('app-screen').classList.remove('hidden');
+            document.getElementById('header-avatar').src = data.photo || "https://ui-avatars.com/api/?name="+data.name+"&background=DC2626&color=fff";
+            document.getElementById('header-greeting').innerText = `Olá, ${data.name.split(' ')[0]}`;
+            
+            loadData();
+        }
+
+        function doLogout() {
+            if(!confirm("Deseja realmente sair?")) return;
+            localStorage.removeItem('whizzy_token');
+            location.reload();
+        }
+
+        // --- DATA ---
+        async function apiCall(body) {
+            const res = await fetch(GAS_URL, {
+                method: 'POST',
+                body: JSON.stringify(body)
+            });
+            const json = await res.json();
+            if (json.status === 'ERROR') throw new Error(json.message);
+            return json;
+        }
+
+        async function loadProfile(token) {
+            showLoader(true, "Sincronizando...");
+            try {
+                const res = await apiCall({ action: 'GET_PROFILE', payload: { token } });
+                STATE.events = res.data.events;
+                STATE.vibeId = res.data.vibe;
+                
+                // Mock user data since get_profile mainly gets events in this simplified version
+                // In production, GET_PROFILE should return user metadata too.
+                // Assuming token valid implies login for UI flow.
+                loginSuccess({ token, name: "Usuário", photo: "", email: "" }); 
+            } catch (err) {
+                console.error(err);
+                localStorage.removeItem('whizzy_token');
+                location.reload();
+            } finally {
+                showLoader(false);
+            }
+        }
+        
+        async function loadData() {
+            renderGrid();
+            updateDateDisplay();
+            showLoader(false);
+        }
+
+        async function syncEvents() {
+            // Background sync
+            try {
+                await apiCall({ 
+                    action: 'SYNC_EVENTS', 
+                    payload: { token: STATE.user.token, events: STATE.events } 
+                });
+                console.log("Synced");
+            } catch(e) {
+                console.error("Sync failed", e);
+            }
+        }
+
+        // --- GRID RENDER ---
+        function renderGrid() {
+            const container = document.getElementById('planner-grid');
+            container.innerHTML = '';
+            
+            const selectedDateStr = STATE.currentDate.toISOString().split('T')[0];
+            const dayEvents = STATE.events.filter(e => e.start.startsWith(selectedDateStr));
+
+            for (let h = 0; h < 24; h++) {
+                for (let m = 0; m < 60; m += 15) {
+                    const timeStr = `${h.toString().padStart(2,'0')}:${m.toString().padStart(2,'0')}`;
+                    const slotId = `${selectedDateStr}T${timeStr}:00.000Z`; // Simplified ISO construct logic
+                    
+                    const div = document.createElement('div');
+                    div.className = 'time-slot border-gray-800';
+                    div.innerHTML = `<span class="time-label">${timeStr}</span>`;
+                    
+                    // Click to Create
+                    div.onclick = (e) => {
+                        if(e.target === div) openEventModal(null, h, m);
+                    };
+
+                    // Render Events
+                    const slotsEvents = dayEvents.filter(ev => {
+                        // Simple check: does event start here? 
+                        // In robust version, check overlaps.
+                        const evTime = new Date(ev.start);
+                        return evTime.getHours() === h && evTime.getMinutes() === m;
+                    });
+
+                    slotsEvents.forEach((ev, idx) => {
+                        const el = document.createElement('div');
+                        el.className = 'event-chip bg-whizzy-input border-l-4 border-whizzy-red text-white';
+                        
+                        // Width logic for overlaps (simplified)
+                        const width = 100 / (slotsEvents.length || 1);
+                        el.style.width = `calc(${width}% - 10px)`;
+                        el.style.left = `calc(40px + ${idx * width}%)`;
+                        
+                        // Height logic based on duration
+                        // Assuming duration is in minutes. 
+                        // But here we need to calc from start/end.
+                        const start = new Date(ev.start);
+                        const end = new Date(ev.end);
+                        const durationMins = (end - start) / 60000;
+                        el.style.height = `${durationMins * 4}px`; // 1min = 4px height (approx based on 60px slot height / 15min = 4px)
+                        el.style.zIndex = 20;
+
+                        // Priority Color
+                        const colors = ['#DC2626', '#EA580C', '#EAB308', '#2563EB', '#16A34A', '#525252'];
+                        el.style.borderLeftColor = colors[ev.priority] || colors[5];
+
+                        el.innerHTML = `<div class="font-bold truncate">${ev.title}</div>`;
+                        el.onclick = (e) => {
+                            e.stopPropagation();
+                            openEventModal(ev);
+                        };
+                        div.appendChild(el);
+                    });
+
+                    container.appendChild(div);
+                }
+            }
+        }
+
+        // --- CRUD ---
+        function openEventModal(eventObj, h, m) {
+            const modal = document.getElementById('modal-event');
+            const form = document.getElementById('form-event');
+            
+            // Check past
+            const isPast = eventObj ? new Date(eventObj.start) < new Date() : new Date(STATE.currentDate).setHours(h,m) < new Date();
+            // Rigorous check: if strictly past (yesterday), readonly. If today passed time, readonly except status.
+            
+            modal.classList.remove('hidden');
+            
+            if (eventObj) {
+                document.getElementById('evt-id').value = eventObj.id;
+                document.getElementById('evt-title').value = eventObj.title;
+                document.getElementById('evt-notes').value = eventObj.notes;
+                document.getElementById('evt-priority').value = eventObj.priority;
+                document.getElementById('evt-status').value = eventObj.status;
+                
+                // Populate time (complex in vanilla JS without libs, keeping simple)
+                const d = new Date(eventObj.start);
+                document.getElementById('evt-start-h').value = d.getHours();
+                document.getElementById('evt-start-m').value = d.getMinutes() === 0 ? "00" : d.getMinutes();
+                
+                document.getElementById('btn-delete').classList.remove('hidden');
+            } else {
+                form.reset();
+                document.getElementById('evt-id').value = "";
+                document.getElementById('evt-start-h').value = h;
+                document.getElementById('evt-start-m').value = m === 0 ? "00" : m;
+                document.getElementById('btn-delete').classList.add('hidden');
+            }
+        }
+
+        function saveEvent(e) {
+            e.preventDefault();
+            
+            const id = document.getElementById('evt-id').value || Date.now().toString(); // UUID sim
+            const title = document.getElementById('evt-title').value;
+            const h = parseInt(document.getElementById('evt-start-h').value);
+            const m = parseInt(document.getElementById('evt-start-m').value);
+            const dur = parseInt(document.getElementById('evt-duration').value);
+            
+            const start = new Date(STATE.currentDate);
+            start.setHours(h, m, 0, 0);
+            
+            const end = new Date(start);
+            end.setMinutes(end.getMinutes() + dur);
+            
+            // Block retroactive creation
+            if (!document.getElementById('evt-id').value && start < new Date()) {
+                alert("O Whizzy Planner não permite criar compromissos no passado.");
+                return;
+            }
+
+            const newEvt = {
+                id,
+                title,
+                start: start.toISOString(),
+                end: end.toISOString(),
+                priority: document.getElementById('evt-priority').value,
+                status: document.getElementById('evt-status').value,
+                notes: document.getElementById('evt-notes').value,
+                color: 'DEFAULT'
+            };
+
+            // Remove old if update
+            STATE.events = STATE.events.filter(e => e.id !== id);
+            STATE.events.push(newEvt);
+            
+            closeModal('modal-event');
+            renderGrid();
+            syncEvents(); // Send to backend
+        }
+        
+        function deleteEvent() {
+            const id = document.getElementById('evt-id').value;
+            if(!confirm("Excluir?")) return;
+            STATE.events = STATE.events.filter(e => e.id !== id); // Actually delete for now, or status DELETED
+            closeModal('modal-event');
+            renderGrid();
+            syncEvents();
+        }
+
+        // --- HELPERS ---
+        function showLoader(show, text) {
+            const el = document.getElementById('loader');
+            if(show) {
+                el.classList.remove('hidden');
+                document.getElementById('loader-text').innerText = text || "Carregando...";
+                document.getElementById('progress-bar').style.width = "100%";
+            } else {
+                el.classList.add('hidden');
+                document.getElementById('progress-bar').style.width = "0";
+            }
+        }
+        
+        function closeModal(id) {
+            document.getElementById(id).classList.add('hidden');
+        }
+
+        function changeDay(delta) {
+            STATE.currentDate.setDate(STATE.currentDate.getDate() + delta);
+            updateDateDisplay();
+            renderGrid();
+        }
+
+        function jumpToDate(val) {
+            const [y, m, d] = val.split('-');
+            STATE.currentDate = new Date(y, m-1, d);
+            updateDateDisplay();
+            renderGrid();
+        }
+
+        function updateDateDisplay() {
+            const opt = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
+            const str = STATE.currentDate.toLocaleDateString('pt-BR', opt);
+            document.getElementById('header-date').innerText = str.charAt(0).toUpperCase() + str.slice(1);
+            document.getElementById('nav-date-display').innerText = STATE.currentDate.toLocaleDateString('pt-BR');
+        }
+
+        function populateTimeSelects() {
+            const selH = document.getElementById('evt-start-h');
+            for(let i=0; i<24; i++) {
+                const opt = document.createElement('option');
+                opt.value = i;
+                opt.innerText = i.toString().padStart(2, '0') + 'h';
+                selH.appendChild(opt);
+            }
+        }
+        
+        function showVibe() {
+            document.getElementById('modal-vibe').classList.remove('hidden');
+            // Logic to fetch video/text based on STATE.vibeId would go here
+        }
+        
+        function toggleMobileMenu() {
+            const menu = document.getElementById('mobile-menu');
+            if (menu.classList.contains('-translate-x-full')) {
+                menu.classList.remove('-translate-x-full');
+            } else {
+                menu.classList.add('-translate-x-full');
+            }
+        }
+
+        // PWA SERVICE WORKER
+        function initServiceWorker() {
+            if ('serviceWorker' in navigator) {
+                 // Try/Catch adicionado para evitar erros em visualizadores online que bloqueiam SW
+                 try {
+                    navigator.serviceWorker.register('./sw.js', { scope: './' })
+                        .then(reg => console.log('Service Worker registrado', reg))
+                        .catch(err => console.log('Falha no SW (Normal em preview/http):', err));
+                 } catch (e) {
+                     console.log('Service Worker não suportado neste ambiente (Segurança).');
+                 }
+            }
+        }
+    </script>
+</body>
+</html>
