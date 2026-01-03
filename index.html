@@ -1,10 +1,10 @@
 
 <!DOCTYPE html>
-<html lang="pt-BR">
+<html lang="pt-BR" class="dark">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>WHIZZY PLANNER 2026</title>
+    <title>WHIZZYPLANNER 2026</title>
     
     <!-- PWA -->
     <link rel="manifest" href="manifest.json">
@@ -37,48 +37,135 @@
     </script>
     
     <!-- Google Fonts -->
-    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&family=Playfair+Display:ital@1&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700;900&family=Playfair+Display:ital@1&display=swap" rel="stylesheet">
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
 
     <style>
-        body { background-color: #000; color: #E0E0E0; font-family: 'Roboto', sans-serif; overflow: hidden; }
+        /* Base Styles */
+        body { 
+            background-color: #f3f4f6; /* Light mode default */
+            color: #1f2937; 
+            font-family: 'Roboto', sans-serif; 
+            overflow: hidden; 
+        }
         
-        /* Custom Scrollbar */
-        ::-webkit-scrollbar { width: 6px; }
-        ::-webkit-scrollbar-track { background: #000; }
-        ::-webkit-scrollbar-thumb { background: #333; border-radius: 3px; }
-        ::-webkit-scrollbar-thumb:hover { background: #DC2626; }
+        .dark body {
+            background-color: #000;
+            color: #E0E0E0;
+        }
 
-        /* Floating Label */
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: #ccc; border-radius: 3px; }
+        .dark ::-webkit-scrollbar-track { background: #000; }
+        .dark ::-webkit-scrollbar-thumb { background: #333; }
+        .dark ::-webkit-scrollbar-thumb:hover { background: #DC2626; }
+
+        /* Floating Label Logic - Fix Overlap */
         .floating-input { position: relative; margin-bottom: 1.5rem; }
         .floating-input input, .floating-input select, .floating-input textarea {
-            width: 100%; background: #1E1E1E; border: 1px solid #333; color: white;
-            padding: 1rem 0.75rem 0.5rem; border-radius: 4px; outline: none; transition: border-color 0.2s;
+            width: 100%; 
+            background: #fff; 
+            border: 1px solid #ddd; 
+            color: #000;
+            padding: 1rem 0.75rem 0.5rem; 
+            border-radius: 4px; 
+            outline: none; 
+            transition: border-color 0.2s;
         }
-        .floating-input input:focus { border-color: #DC2626; }
+        .dark .floating-input input, .dark .floating-input select, .dark .floating-input textarea {
+            background: #1E1E1E; border: 1px solid #333; color: white;
+        }
+        .floating-input input:focus, .floating-input select:focus, .floating-input textarea:focus { border-color: #DC2626; }
+        
         .floating-input label {
             position: absolute; top: 0.75rem; left: 0.75rem; color: #888; pointer-events: none;
             transition: 0.2s ease all; font-size: 1rem;
         }
-        .floating-input input:focus ~ label, .floating-input input:not(:placeholder-shown) ~ label,
-        .floating-input select:focus ~ label, .floating-input select:valid ~ label {
+        
+        /* The Magic Selector for Floating Label */
+        .floating-input input:focus ~ label, 
+        .floating-input input:not(:placeholder-shown) ~ label,
+        .floating-input select:focus ~ label, 
+        .floating-input select:not([value=""]):valid ~ label,
+        .floating-input textarea:focus ~ label,
+        .floating-input textarea:not(:placeholder-shown) ~ label {
             top: 0.2rem; font-size: 0.7rem; color: #DC2626;
         }
 
         /* Animations */
-        @keyframes pulse-red { 0% { box-shadow: 0 0 0 0 rgba(220, 38, 38, 0.7); } 70% { box-shadow: 0 0 0 10px rgba(220, 38, 38, 0); } 100% { box-shadow: 0 0 0 0 rgba(220, 38, 38, 0); } }
-        .pulse-btn { animation: pulse-red 2s infinite; }
-        
         @keyframes spin-hourglass { 0% { transform: rotate(0deg); } 90% { transform: rotate(0deg); } 100% { transform: rotate(180deg); } }
         .logo-anim { animation: spin-hourglass 5s infinite ease-in-out; }
 
-        /* Grid */
-        .time-slot { border-bottom: 1px solid #222; height: 60px; position: relative; }
-        .time-label { position: absolute; left: 5px; top: 5px; font-size: 0.7rem; color: #666; }
-        .event-chip { position: absolute; height: 90%; top: 5%; border-radius: 4px; padding: 2px 5px; font-size: 0.75rem; overflow: hidden; cursor: pointer; transition: transform 0.1s; box-shadow: 0 2px 4px rgba(0,0,0,0.5); }
-        .event-chip:hover { transform: scale(1.02); z-index: 10; }
+        /* Grid Architecture - 3 Slots per 15 min */
+        .time-slot { 
+            border-bottom: 1px solid #e5e7eb; 
+            height: 80px; /* Slightly taller for visual breathing room */ 
+            position: relative; 
+            display: grid;
+            grid-template-columns: repeat(3, 1fr); /* 3 Columns */
+            gap: 4px;
+            padding-left: 50px; /* Space for Time Label */
+            padding-right: 4px;
+            padding-top: 2px;
+            padding-bottom: 2px;
+        }
+        .dark .time-slot { border-bottom: 1px solid #222; }
         
+        .time-label { 
+            position: absolute; left: 5px; top: 5px; 
+            font-size: 0.75rem; font-weight: bold; color: #666; 
+        }
+
+        /* Add Button inside Slot */
+        .add-btn-slot {
+            position: absolute; left: 2px; bottom: 2px;
+            font-size: 12px; color: #999; cursor: pointer;
+            opacity: 0; transition: opacity 0.2s;
+            z-index: 5;
+        }
+        .time-slot:hover .add-btn-slot { opacity: 1; }
+
+        /* Event Card */
+        .event-chip { 
+            border-radius: 4px; 
+            padding: 4px 6px; 
+            font-size: 0.75rem; 
+            overflow: hidden; 
+            box-shadow: 0 1px 3px rgba(0,0,0,0.3);
+            position: relative;
+            cursor: default;
+            display: flex; flex-direction: column; justify-content: space-between;
+        }
+        .event-chip:hover { z-index: 50; height: auto; min-height: 100%; }
+        
+        .chip-actions {
+            display: none;
+            margin-top: 4px;
+            justify-content: flex-end;
+            gap: 4px;
+        }
+        .event-chip:hover .chip-actions { display: flex; }
+        
+        .action-icon {
+            cursor: pointer; padding: 2px; border-radius: 2px; background: rgba(0,0,0,0.2); color: white;
+        }
+        .action-icon:hover { background: rgba(0,0,0,0.5); }
+
+        /* Priority Colors */
+        .prio-0 { background: #DC2626; color: white; border: 1px solid #991b1b; } /* Critica */
+        .prio-1 { background: #ea580c; color: white; border: 1px solid #c2410c; } /* Alta */
+        .prio-2 { background: #eab308; color: black; border: 1px solid #ca8a04; } /* Media */
+        .prio-3 { background: #2563eb; color: white; border: 1px solid #1d4ed8; } /* Normal */
+        .prio-4 { background: #16a34a; color: white; border: 1px solid #15803d; } /* Baixa */
+        .prio-5 { background: #525252; color: white; border: 1px solid #404040; } /* Opcional */
+
         .loading-overlay { position: fixed; top:0; left:0; width:100%; height:100%; background: #000; z-index: 9999; display: flex; flex-direction: column; justify-content: center; align-items: center; }
+        
+        /* Modal Transitions */
+        .modal-bg { transition: opacity 0.3s ease; }
+        .modal-content { transition: transform 0.3s ease; }
     </style>
 </head>
 <body>
@@ -86,7 +173,7 @@
     <!-- LOADING SCREEN -->
     <div id="loader" class="loading-overlay hidden">
         <div class="text-6xl mb-4 logo-anim">⏳</div>
-        <div class="text-xl font-light tracking-widest text-whizzy-red">WHIZZY PLANNER</div>
+        <div class="text-xl font-black tracking-tighter text-whizzy-red">WHIZZYPLANNER</div>
         <div class="w-64 h-1 bg-gray-900 mt-4 rounded overflow-hidden">
             <div id="progress-bar" class="h-full bg-whizzy-red w-0 transition-all duration-300"></div>
         </div>
@@ -94,17 +181,17 @@
     </div>
 
     <!-- AUTH SCREEN -->
-    <div id="auth-screen" class="h-screen w-full flex items-center justify-center p-4">
+    <div id="auth-screen" class="h-screen w-full flex items-center justify-center p-4 bg-black">
         <div class="w-full max-w-md bg-whizzy-surface p-8 rounded-lg shadow-2xl border border-gray-800">
             <div class="text-center mb-8">
                 <div class="text-5xl mb-2 inline-block logo-anim">⏳</div>
-                <h1 class="text-2xl font-bold tracking-wider">WHIZZY PLANNER <span class="text-whizzy-red">2026</span></h1>
+                <h1 class="text-2xl font-black tracking-tighter text-white">WHIZZYPLANNER <span class="text-whizzy-red">2026</span></h1>
             </div>
 
             <!-- TABS -->
             <div class="flex mb-6 border-b border-gray-800">
                 <button onclick="switchAuth('login')" id="tab-login" class="flex-1 pb-2 text-whizzy-red border-b-2 border-whizzy-red font-bold">ENTRAR</button>
-                <button onclick="switchAuth('register')" id="tab-register" class="flex-1 pb-2 text-gray-500">ATIVAR LICENÇA</button>
+                <button onclick="switchAuth('register')" id="tab-register" class="flex-1 pb-2 text-gray-500 hover:text-gray-300">ATIVAR LICENÇA</button>
             </div>
 
             <!-- LOGIN FORM -->
@@ -117,7 +204,10 @@
                     <input type="password" id="login-pass" placeholder=" " required>
                     <label>Senha</label>
                 </div>
-                <button type="submit" class="w-full bg-whizzy-red hover:bg-red-700 text-white font-bold py-3 rounded transition pulse-btn">ACESSAR SISTEMA</button>
+                <button type="submit" class="w-full bg-whizzy-red hover:bg-red-700 text-white font-bold py-3 rounded transition uppercase tracking-wider mb-4">Acessar Sistema</button>
+                <div class="text-center">
+                    <a href="#" onclick="openModal('modal-forgot')" class="text-sm text-gray-500 hover:text-white">Esqueci minha senha</a>
+                </div>
             </form>
 
             <!-- REGISTER FORM -->
@@ -136,36 +226,49 @@
                 </div>
                 <div class="floating-input">
                     <input type="password" id="reg-pass" placeholder=" " required>
-                    <label>Criar Senha</label>
+                    <label>Criar Senha (Min 8, Num, Especial)</label>
                 </div>
-                <button type="submit" class="w-full bg-white text-black hover:bg-gray-200 font-bold py-3 rounded transition">ATIVAR E INICIAR</button>
+                <div class="floating-input">
+                    <input type="password" id="reg-pass-conf" placeholder=" " required>
+                    <label>Confirmar Senha</label>
+                </div>
+                <button type="submit" class="w-full bg-white text-black hover:bg-gray-200 font-bold py-3 rounded transition uppercase tracking-wider">Ativar e Iniciar</button>
             </form>
         </div>
     </div>
 
     <!-- MAIN APP -->
-    <div id="app-screen" class="h-screen w-full flex flex-col hidden">
+    <div id="app-screen" class="h-screen w-full flex flex-col hidden bg-white dark:bg-black transition-colors duration-300">
         
         <!-- HEADER -->
-        <header class="h-16 bg-whizzy-surface border-b border-gray-800 flex items-center justify-between px-4 z-50">
+        <header class="h-16 bg-white dark:bg-whizzy-surface border-b border-gray-200 dark:border-gray-800 flex items-center justify-between px-4 z-40 transition-colors">
             <div class="flex items-center gap-3">
-                <button class="md:hidden text-white" onclick="toggleMobileMenu()"><i class="material-icons">menu</i></button>
+                <button class="md:hidden text-black dark:text-white" onclick="toggleMobileMenu()"><i class="material-icons">menu</i></button>
                 <div class="text-2xl logo-anim cursor-pointer" onclick="showVibe()">⏳</div>
-                <div class="hidden md:block font-bold tracking-wider">WHIZZY <span class="text-whizzy-red">2026</span></div>
+                <div class="hidden md:block font-black tracking-tighter text-black dark:text-white">WHIZZYPLANNER</div>
             </div>
             
             <div class="flex items-center gap-4">
+                <!-- Data Atual -->
                 <div class="text-sm text-right hidden md:block">
-                    <div id="header-date" class="font-bold text-white">Carregando...</div>
-                    <div id="header-greeting" class="text-xs text-gray-500">Bom dia</div>
+                    <div id="header-date" class="font-bold text-black dark:text-white uppercase">Carregando...</div>
                 </div>
-                <button onclick="showVibe()" class="text-whizzy-red hover:text-white transition"><i class="material-icons">bolt</i></button>
-                <div class="relative group">
-                    <img id="header-avatar" src="https://via.placeholder.com/40" class="w-10 h-10 rounded-full border border-gray-700 cursor-pointer object-cover">
-                    <!-- Dropdown Desktop -->
-                    <div class="absolute right-0 top-12 w-48 bg-whizzy-surface border border-gray-800 shadow-xl rounded hidden group-hover:block">
-                        <a href="#" onclick="openProfile()" class="block px-4 py-2 hover:bg-whizzy-input">Perfil</a>
-                        <a href="#" onclick="doLogout()" class="block px-4 py-2 text-whizzy-red hover:bg-whizzy-input">Sair</a>
+
+                <!-- Tools -->
+                <button onclick="toggleTheme()" class="text-gray-500 hover:text-black dark:hover:text-white"><i class="material-icons" id="theme-icon">dark_mode</i></button>
+                <button onclick="openModal('modal-search')" class="text-gray-500 hover:text-black dark:hover:text-white"><i class="material-icons">search</i></button>
+                <button onclick="generatePDF()" class="text-gray-500 hover:text-black dark:hover:text-white"><i class="material-icons">picture_as_pdf</i></button>
+                <button onclick="showVibe()" class="text-whizzy-red hover:text-red-700"><i class="material-icons">bolt</i></button>
+                
+                <!-- Avatar -->
+                <div class="relative group" id="user-menu-container">
+                    <img id="header-avatar" src="https://via.placeholder.com/40" class="w-10 h-10 rounded-full border border-gray-300 dark:border-gray-700 cursor-pointer object-cover">
+                    <!-- Dropdown Desktop (Click trigger in JS, removed hover only for safety) -->
+                    <div id="user-dropdown" class="hidden absolute right-0 top-12 w-48 bg-white dark:bg-whizzy-surface border border-gray-200 dark:border-gray-800 shadow-xl rounded z-50">
+                        <a href="#" onclick="openProfile()" class="block px-4 py-3 hover:bg-gray-100 dark:hover:bg-whizzy-input text-black dark:text-white">Perfil</a>
+                        <a href="#" onclick="openModal('modal-config')" class="block px-4 py-3 hover:bg-gray-100 dark:hover:bg-whizzy-input text-black dark:text-white">Configurações</a>
+                        <div class="border-t border-gray-200 dark:border-gray-700"></div>
+                        <a href="#" onclick="confirmLogout()" class="block px-4 py-3 text-whizzy-red hover:bg-gray-100 dark:hover:bg-whizzy-input font-bold">Sair</a>
                     </div>
                 </div>
             </div>
@@ -174,82 +277,125 @@
         <!-- BODY -->
         <div class="flex-1 flex overflow-hidden relative">
             
-            <!-- MOBILE MENU OVERLAY -->
-            <div id="mobile-menu" class="absolute inset-0 bg-black/95 z-40 transform -translate-x-full transition-transform duration-300 md:hidden flex flex-col p-8">
+            <!-- MOBILE MENU -->
+            <div id="mobile-menu" class="absolute inset-0 bg-black/95 z-50 transform -translate-x-full transition-transform duration-300 md:hidden flex flex-col p-8">
                 <button onclick="toggleMobileMenu()" class="self-end text-white mb-8"><i class="material-icons text-3xl">close</i></button>
-                <a href="#" onclick="setView('day'); toggleMobileMenu()" class="text-2xl mb-6 font-bold">Agenda Diária</a>
-                <a href="#" onclick="openProfile(); toggleMobileMenu()" class="text-2xl mb-6 text-gray-400">Meu Perfil</a>
-                <a href="#" onclick="doLogout()" class="text-2xl mt-auto text-whizzy-red">Sair</a>
+                <input type="date" id="date-picker-mobile" class="bg-gray-800 text-white p-4 rounded mb-6 text-xl w-full" onchange="jumpToDate(this.value)">
+                <a href="#" onclick="setView('day'); toggleMobileMenu()" class="text-2xl mb-6 font-bold text-white">Agenda</a>
+                <a href="#" onclick="openProfile(); toggleMobileMenu()" class="text-2xl mb-6 text-gray-400">Perfil</a>
+                <a href="#" onclick="openModal('modal-search'); toggleMobileMenu()" class="text-2xl mb-6 text-gray-400">Buscar</a>
+                <a href="#" onclick="confirmLogout()" class="text-2xl mt-auto text-whizzy-red">Sair</a>
             </div>
 
-            <!-- CALENDAR NAV (LEFT COL DESKTOP) -->
-            <aside class="w-64 bg-whizzy-surface border-r border-gray-800 hidden md:flex flex-col p-4">
-                <div id="mini-calendar" class="mb-8">
-                    <!-- Simplificado: Apenas Navegação -->
-                    <div class="flex justify-between items-center mb-4">
-                        <button onclick="changeDay(-1)" class="p-1 hover:bg-gray-800 rounded"><i class="material-icons">chevron_left</i></button>
-                        <span id="nav-date-display" class="font-bold">Hoje</span>
-                        <button onclick="changeDay(1)" class="p-1 hover:bg-gray-800 rounded"><i class="material-icons">chevron_right</i></button>
-                    </div>
-                    <input type="date" id="date-picker" class="w-full bg-whizzy-input text-white p-2 rounded" onchange="jumpToDate(this.value)">
+            <!-- SIDEBAR DESKTOP (COLLAPSIBLE) -->
+            <aside id="sidebar" class="bg-white dark:bg-whizzy-surface border-r border-gray-200 dark:border-gray-800 hidden md:flex flex-col transition-all duration-300 w-64">
+                <div class="p-4 flex justify-between items-center border-b border-gray-200 dark:border-gray-800">
+                    <span class="font-bold text-xs text-gray-500 tracking-widest sidebar-text">NAVEGAÇÃO</span>
+                    <button onclick="toggleSidebar()" class="text-gray-500"><i class="material-icons text-sm">chevron_left</i></button>
                 </div>
-                <div class="mt-auto">
-                    <button onclick="generatePDF()" class="w-full border border-gray-700 hover:bg-gray-800 py-2 rounded flex items-center justify-center gap-2">
-                        <i class="material-icons text-sm">picture_as_pdf</i> Relatório
-                    </button>
+
+                <div class="p-4 flex-1 overflow-y-auto">
+                    <!-- Calendar Nav -->
+                    <div class="mb-6 sidebar-text">
+                        <div class="flex justify-between items-center mb-2 bg-gray-100 dark:bg-whizzy-input rounded p-1">
+                            <button onclick="changeDay(-1)" class="p-1 hover:text-whizzy-red text-black dark:text-white"><i class="material-icons">chevron_left</i></button>
+                            <span id="nav-date-display" class="font-bold text-sm text-black dark:text-white">Hoje</span>
+                            <button onclick="changeDay(1)" class="p-1 hover:text-whizzy-red text-black dark:text-white"><i class="material-icons">chevron_right</i></button>
+                        </div>
+                        <input type="date" id="date-picker" class="w-full bg-white dark:bg-whizzy-input border border-gray-300 dark:border-gray-700 text-black dark:text-white p-2 rounded text-sm" onchange="jumpToDate(this.value)">
+                    </div>
                 </div>
             </aside>
 
-            <!-- MAIN GRID (CENTER) -->
-            <main class="flex-1 overflow-y-auto relative bg-black" id="planner-container">
-                <!-- GRID RENDERED BY JS -->
-                <div id="planner-grid" class="pb-20 md:pb-0"></div>
+            <!-- MAIN GRID -->
+            <main class="flex-1 overflow-y-auto relative bg-gray-50 dark:bg-black transition-colors" id="planner-container">
+                <div id="planner-grid" class="pb-20 md:pb-0 min-h-full"></div>
             </main>
 
         </div>
     </div>
 
-    <!-- MODAL EVENT -->
-    <div id="modal-event" class="fixed inset-0 bg-black/80 z-50 hidden flex items-center justify-center p-4">
-        <div class="bg-whizzy-surface w-full max-w-lg rounded-lg border border-gray-700 shadow-2xl overflow-hidden">
-            <div class="p-4 border-b border-gray-800 flex justify-between items-center bg-whizzy-input">
-                <h3 class="font-bold text-lg" id="modal-title-text">Novo Compromisso</h3>
-                <button onclick="closeModal('modal-event')" class="text-gray-500 hover:text-white"><i class="material-icons">close</i></button>
+    <!-- ================= MODALS (CUSTOM - NO ALERTS) ================= -->
+
+    <!-- GENERIC ALERT MODAL -->
+    <div id="modal-alert" class="fixed inset-0 z-[100] hidden flex items-center justify-center p-4">
+        <div class="absolute inset-0 bg-black/80 backdrop-blur-sm" onclick="closeModal('modal-alert')"></div>
+        <div class="bg-white dark:bg-whizzy-surface w-full max-w-sm rounded border-l-4 border-whizzy-red shadow-2xl relative z-10 p-6 transform transition-all scale-100">
+            <h3 class="font-bold text-lg mb-2 text-black dark:text-white" id="alert-title">Atenção</h3>
+            <p class="text-gray-600 dark:text-gray-300 mb-6" id="alert-msg">Mensagem...</p>
+            <div class="flex justify-end">
+                <button onclick="closeModal('modal-alert')" class="bg-whizzy-red text-white px-6 py-2 rounded font-bold hover:bg-red-700">OK</button>
             </div>
-            <form id="form-event" class="p-6" onsubmit="saveEvent(event)">
+        </div>
+    </div>
+
+    <!-- CONFIRMATION MODAL -->
+    <div id="modal-confirm" class="fixed inset-0 z-[100] hidden flex items-center justify-center p-4">
+        <div class="absolute inset-0 bg-black/80 backdrop-blur-sm"></div>
+        <div class="bg-white dark:bg-whizzy-surface w-full max-w-sm rounded border border-gray-200 dark:border-gray-700 shadow-2xl relative z-10 p-6">
+            <h3 class="font-bold text-lg mb-4 text-black dark:text-white">Confirmação</h3>
+            <p class="text-gray-600 dark:text-gray-300 mb-6" id="confirm-msg">Tem certeza?</p>
+            <div class="flex justify-end gap-3">
+                <button onclick="closeModal('modal-confirm')" class="text-gray-500 hover:text-black dark:hover:text-white px-4 py-2">Cancelar</button>
+                <button id="btn-confirm-action" class="bg-whizzy-red text-white px-6 py-2 rounded font-bold hover:bg-red-700">CONFIRMAR</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- EVENT MODAL -->
+    <div id="modal-event" class="fixed inset-0 z-[60] hidden flex items-center justify-center p-4">
+        <div class="absolute inset-0 bg-black/80" onclick="closeModal('modal-event')"></div>
+        <div class="bg-white dark:bg-whizzy-surface w-full max-w-lg rounded-lg border border-gray-200 dark:border-gray-700 shadow-2xl relative z-10 overflow-hidden flex flex-col max-h-[90vh]">
+            <div class="p-4 border-b border-gray-200 dark:border-gray-800 flex justify-between items-center bg-gray-50 dark:bg-whizzy-input">
+                <h3 class="font-bold text-lg text-black dark:text-white" id="modal-title-text">Novo Compromisso</h3>
+                <button onclick="closeModal('modal-event')" class="text-gray-500 hover:text-red-500"><i class="material-icons">close</i></button>
+            </div>
+            
+            <form id="form-event" class="p-6 overflow-y-auto" onsubmit="saveEvent(event)">
                 <input type="hidden" id="evt-id">
                 
                 <div class="floating-input">
                     <input type="text" id="evt-title" placeholder=" " required>
-                    <label>O que você vai fazer?</label>
+                    <label>Título (O que vai fazer?)</label>
                 </div>
 
-                <div class="flex gap-4">
+                <!-- Hora Início -->
+                <div class="flex gap-4 mb-2">
                     <div class="floating-input flex-1">
                         <select id="evt-start-h" required class="appearance-none"></select>
-                        <label>Hora</label>
+                        <label>Hora Início</label>
                     </div>
                     <div class="floating-input flex-1">
                         <select id="evt-start-m" required class="appearance-none">
                             <option value="00">00</option><option value="15">15</option>
                             <option value="30">30</option><option value="45">45</option>
                         </select>
-                        <label>Min</label>
-                    </div>
-                    <div class="floating-input flex-1">
-                        <select id="evt-duration" required class="appearance-none">
-                            <option value="15">15m</option><option value="30">30m</option>
-                            <option value="60">1h</option><option value="90">1h30</option>
-                            <option value="120">2h</option>
-                        </select>
-                        <label>Duração</label>
+                        <label>Min Início</label>
                     </div>
                 </div>
 
+                <!-- Duração Split -->
+                <div class="flex gap-4 mb-2">
+                    <div class="floating-input flex-1">
+                        <select id="evt-dur-h" required class="appearance-none">
+                            <!-- JS Populates 0-23 -->
+                        </select>
+                        <label>Duração (Horas)</label>
+                    </div>
+                    <div class="floating-input flex-1">
+                        <select id="evt-dur-m" required class="appearance-none">
+                            <option value="0">00 min</option><option value="15">15 min</option>
+                            <option value="30">30 min</option><option value="45">45 min</option>
+                        </select>
+                        <label>Duração (Min)</label>
+                    </div>
+                </div>
+
+                <!-- Priority & Status -->
                 <div class="flex gap-4">
                     <div class="floating-input flex-1">
                         <select id="evt-priority" class="appearance-none">
-                            <option value="0">0 - Crítica (Alta)</option>
+                            <option value="0">0 - Crítica</option>
                             <option value="1">1 - Alta</option>
                             <option value="2">2 - Média</option>
                             <option value="3">3 - Normal</option>
@@ -258,7 +404,7 @@
                         </select>
                         <label>Prioridade</label>
                     </div>
-                    <div class="floating-input flex-1">
+                    <div class="floating-input flex-1 hidden" id="div-status">
                         <select id="evt-status" class="appearance-none">
                             <option value="OPEN">Aberto</option>
                             <option value="IN_PROGRESS">Iniciado</option>
@@ -274,57 +420,163 @@
                     <label>Observações</label>
                 </div>
 
-                <div class="flex justify-end gap-3 mt-4">
-                    <button type="button" onclick="deleteEvent()" id="btn-delete" class="text-red-500 hover:text-red-400 px-4 hidden">Excluir</button>
-                    <button type="submit" class="bg-whizzy-red text-white font-bold py-2 px-6 rounded hover:bg-red-700">SALVAR</button>
+                <div class="flex justify-end gap-3 mt-4 pt-4 border-t border-gray-200 dark:border-gray-800">
+                    <button type="submit" class="bg-whizzy-red text-white font-bold py-3 px-8 rounded hover:bg-red-700 w-full md:w-auto">SALVAR</button>
                 </div>
             </form>
         </div>
     </div>
 
-    <!-- MODAL VIBES -->
-    <div id="modal-vibe" class="fixed inset-0 bg-black/90 z-50 hidden flex items-center justify-center p-4" onclick="closeModal('modal-vibe')">
-        <div class="max-w-2xl text-center" onclick="event.stopPropagation()">
-            <div class="text-6xl mb-6 logo-anim mx-auto">⏳</div>
-            <h2 class="text-3xl md:text-5xl font-serif text-whizzy-red mb-8 italic" id="vibe-text">
-                "O futuro pertence àqueles que se preparam hoje."
-            </h2>
-            <div class="text-gray-500 text-sm">GOOD VIBES DO DIA</div>
+    <!-- PROFILE MODAL -->
+    <div id="modal-profile" class="fixed inset-0 z-[70] hidden flex items-center justify-center p-4">
+        <div class="absolute inset-0 bg-black/80" onclick="closeModal('modal-profile')"></div>
+        <div class="bg-white dark:bg-whizzy-surface w-full max-w-md rounded-lg relative z-10 p-6">
+            <h3 class="font-bold text-xl mb-6 text-black dark:text-white border-b pb-2 border-gray-700">Editar Perfil</h3>
+            <form onsubmit="updateProfileSubmit(event)">
+                <div class="floating-input">
+                    <input type="text" id="prof-name" placeholder=" " required>
+                    <label>Nome de Exibição</label>
+                </div>
+                <div class="floating-input">
+                    <input type="url" id="prof-photo" placeholder=" ">
+                    <label>URL da Foto (https://...)</label>
+                </div>
+                <div class="floating-input">
+                    <input type="password" id="prof-pwd" placeholder=" ">
+                    <label>Nova Senha (Opcional)</label>
+                </div>
+                <div class="floating-input">
+                    <input type="password" id="prof-pwd-conf" placeholder=" ">
+                    <label>Confirmar Nova Senha</label>
+                </div>
+                <button type="submit" class="w-full bg-whizzy-red text-white py-2 rounded font-bold">ATUALIZAR DADOS</button>
+            </form>
         </div>
     </div>
 
-    <!-- JAVASCRIPT LOGIC -->
+    <!-- SEARCH MODAL -->
+    <div id="modal-search" class="fixed inset-0 z-[80] hidden flex items-center justify-center p-4">
+        <div class="absolute inset-0 bg-black/80" onclick="closeModal('modal-search')"></div>
+        <div class="bg-white dark:bg-whizzy-surface w-full max-w-2xl rounded-lg relative z-10 p-6 h-[80vh] flex flex-col">
+            <h3 class="font-bold text-xl mb-4 text-black dark:text-white">Busca Avançada</h3>
+            <div class="flex gap-2 mb-4">
+                <input type="text" id="search-query" placeholder="Buscar título ou notas..." class="flex-1 bg-gray-100 dark:bg-whizzy-input border border-gray-300 dark:border-gray-700 p-2 rounded text-black dark:text-white">
+                <button onclick="performSearch()" class="bg-whizzy-red text-white px-4 rounded"><i class="material-icons">search</i></button>
+            </div>
+            <div id="search-results" class="flex-1 overflow-y-auto bg-gray-50 dark:bg-black p-2 rounded border border-gray-200 dark:border-gray-800">
+                <p class="text-center text-gray-500 mt-10">Digite para buscar...</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- FORGOT PASSWORD MODAL -->
+    <div id="modal-forgot" class="fixed inset-0 z-[90] hidden flex items-center justify-center p-4">
+        <div class="absolute inset-0 bg-black/90" onclick="closeModal('modal-forgot')"></div>
+        <div class="bg-white dark:bg-whizzy-surface w-full max-w-sm p-6 rounded relative z-10">
+            <h3 class="font-bold mb-4 text-black dark:text-white">Recuperar Acesso</h3>
+            <p class="text-sm text-gray-500 mb-4">Informe seu e-mail para receber um link de redefinição.</p>
+            <input type="email" id="forgot-email" class="w-full bg-gray-100 dark:bg-whizzy-input border p-2 mb-4 rounded text-black dark:text-white" placeholder="E-mail">
+            <button onclick="submitForgot()" class="w-full bg-whizzy-red text-white py-2 rounded">ENVIAR</button>
+        </div>
+    </div>
+
+    <!-- VIBE MODAL -->
+    <div id="modal-vibe" class="fixed inset-0 bg-black/95 z-[100] hidden flex items-center justify-center p-4">
+        <button onclick="closeModal('modal-vibe')" class="absolute top-4 right-4 text-white hover:text-red-500 z-50"><i class="material-icons text-4xl">close</i></button>
+        <div class="max-w-2xl text-center relative">
+            <div class="text-6xl mb-6 logo-anim mx-auto">⏳</div>
+            <h2 class="text-3xl md:text-5xl font-serif text-whizzy-red mb-8 italic" id="vibe-text">
+                "Carregando a vibe..."
+            </h2>
+            <div class="text-gray-500 text-sm tracking-widest">VIBE DO DIA</div>
+        </div>
+    </div>
+
     <script>
         // =================================================================
-        // ⚠️⚠️⚠️ CONFIGURAÇÃO PRINCIPAL ⚠️⚠️⚠️
+        // CONFIG
         // =================================================================
-        const GAS_URL = 'https://script.google.com/macros/s/AKfycbxntWnGTPhNxW4jyRV4dHYoWPOcT0hDqWGMo5-DF2qkU2Wgl6_YC8a7-tIW6MczcRxd2w/exec'; 
-        // 👆👆👆 COLE A URL DO SCRIPT (PASSO 1) AQUI ENTRE AS ASPAS 👆👆👆
-        // =================================================================
+        const GAS_URL = 'https://script.google.com/macros/s/AKfycbzZWbiu4nTpoX34CJhaysMDE7qA_6DmLrT_8Ukkdu3l6ufXxgSL0hQRabxfUWjndS8rbg/exec'; 
         
-        // STATE
         let STATE = {
             user: null,
             events: [],
             currentDate: new Date(),
-            vibeId: 1
+            vibeId: 1,
+            confirmCallback: null,
+            isDark: true
         };
 
-        // INIT
+        // =================================================================
+        // INIT & UX
+        // =================================================================
         window.onload = () => {
+            // Theme Check
+            if (localStorage.getItem('whizzy_theme') === 'light') {
+                STATE.isDark = false;
+                document.documentElement.classList.remove('dark');
+                document.getElementById('theme-icon').innerText = 'light_mode';
+            }
+
             const token = localStorage.getItem('whizzy_token');
             if (token) {
-                // Tenta login silencioso ou fetch profile
                 loadProfile(token);
             } else {
                 document.getElementById('auth-screen').classList.remove('hidden');
             }
-            populateTimeSelects();
-            updateDateDisplay();
+            
+            populateSelects();
             initServiceWorker();
+            
+            // Dropdown Click Handler
+            document.getElementById('header-avatar').onclick = (e) => {
+                e.stopPropagation();
+                document.getElementById('user-dropdown').classList.toggle('hidden');
+            };
+            document.addEventListener('click', () => {
+                document.getElementById('user-dropdown').classList.add('hidden');
+            });
         };
 
-        // --- AUTH ---
+        // Scroll to current time logic
+        function scrollToNow() {
+            setTimeout(() => {
+                const h = new Date().getHours();
+                const el = document.getElementById(`row-${h}`);
+                if (el) el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            }, 500);
+        }
+
+        // =================================================================
+        // CUSTOM MODALS (NO ALERTS)
+        // =================================================================
+        function openModal(id, data = null) {
+            document.getElementById(id).classList.remove('hidden');
+        }
+
+        function closeModal(id) {
+            document.getElementById(id).classList.add('hidden');
+        }
+
+        function showAlert(title, msg) {
+            document.getElementById('alert-title').innerText = title;
+            document.getElementById('alert-msg').innerText = msg;
+            openModal('modal-alert');
+        }
+
+        function showConfirm(msg, callback) {
+            document.getElementById('confirm-msg').innerText = msg;
+            STATE.confirmCallback = callback;
+            document.getElementById('btn-confirm-action').onclick = () => {
+                callback();
+                closeModal('modal-confirm');
+            };
+            openModal('modal-confirm');
+        }
+
+        // =================================================================
+        // AUTHENTICATION
+        // =================================================================
         function switchAuth(type) {
             document.getElementById('form-login').classList.toggle('hidden', type !== 'login');
             document.getElementById('form-register').classList.toggle('hidden', type !== 'register');
@@ -342,30 +594,42 @@
                 const res = await apiCall({ action: 'LOGIN', payload: { email, password: pass } });
                 loginSuccess(res.data);
             } catch (err) {
-                alert("Erro: " + err.message);
                 showLoader(false);
+                showAlert("Erro de Acesso", err.message);
             }
         }
 
         async function handleRegister(e) {
             e.preventDefault();
-            if(!confirm("Confirma os dados? A chave será vinculada permanentemente a este e-mail.")) return;
-
-            showLoader(true, "Criando seu universo (pode levar 30s)...");
-            const payload = {
-                key: document.getElementById('reg-key').value.toUpperCase(),
-                name: document.getElementById('reg-name').value,
-                email: document.getElementById('reg-email').value,
-                password: document.getElementById('reg-pass').value
-            };
-
-            try {
-                const res = await apiCall({ action: 'REGISTER', payload });
-                loginSuccess(res.data);
-            } catch (err) {
-                alert("Erro no cadastro: " + err.message);
-                showLoader(false);
+            const pass = document.getElementById('reg-pass').value;
+            const conf = document.getElementById('reg-pass-conf').value;
+            
+            // Password Regex (Min 8, Special, Num)
+            const regex = /^(?=.*[0-9])(?=.*[!@#$%^&*])[a-zA-Z0-9!@#$%^&*]{8,}$/;
+            if (!regex.test(pass)) {
+                return showAlert("Senha Fraca", "A senha deve ter no mínimo 8 caracteres, um número e um caractere especial.");
             }
+            if (pass !== conf) {
+                return showAlert("Erro", "As senhas não conferem.");
+            }
+
+            showConfirm("Confirma a ativação desta chave neste e-mail? Isso não pode ser desfeito.", async () => {
+                showLoader(true, "Criando seu universo...");
+                const payload = {
+                    key: document.getElementById('reg-key').value.toUpperCase(),
+                    name: document.getElementById('reg-name').value,
+                    email: document.getElementById('reg-email').value,
+                    password: pass
+                };
+
+                try {
+                    const res = await apiCall({ action: 'REGISTER', payload });
+                    loginSuccess(res.data);
+                } catch (err) {
+                    showLoader(false);
+                    showAlert("Erro no Cadastro", err.message);
+                }
+            });
         }
 
         function loginSuccess(data) {
@@ -374,19 +638,21 @@
             
             document.getElementById('auth-screen').classList.add('hidden');
             document.getElementById('app-screen').classList.remove('hidden');
-            document.getElementById('header-avatar').src = data.photo || "https://ui-avatars.com/api/?name="+data.name+"&background=DC2626&color=fff";
-            document.getElementById('header-greeting').innerText = `Olá, ${data.name.split(' ')[0]}`;
+            document.getElementById('header-avatar').src = data.photo || `https://ui-avatars.com/api/?name=${data.name}&background=DC2626&color=fff`;
             
             loadData();
         }
 
-        function doLogout() {
-            if(!confirm("Deseja realmente sair?")) return;
-            localStorage.removeItem('whizzy_token');
-            location.reload();
+        function confirmLogout() {
+            showConfirm("Deseja realmente sair do Whizzy Planner?", () => {
+                localStorage.removeItem('whizzy_token');
+                location.reload();
+            });
         }
 
-        // --- DATA ---
+        // =================================================================
+        // DATA & API
+        // =================================================================
         async function apiCall(body) {
             const res = await fetch(GAS_URL, {
                 method: 'POST',
@@ -404,10 +670,13 @@
                 STATE.events = res.data.events;
                 STATE.vibeId = res.data.vibe;
                 
-                // Mock user data since get_profile mainly gets events in this simplified version
-                // In production, GET_PROFILE should return user metadata too.
-                // Assuming token valid implies login for UI flow.
-                loginSuccess({ token, name: "Usuário", photo: "", email: "" }); 
+                // Merge meta
+                loginSuccess({ 
+                    token, 
+                    name: res.data.userMeta.name, 
+                    photo: res.data.userMeta.photo, 
+                    email: res.data.userMeta.email 
+                }); 
             } catch (err) {
                 console.error(err);
                 localStorage.removeItem('whizzy_token');
@@ -417,26 +686,27 @@
             }
         }
         
-        async function loadData() {
+        function loadData() {
             renderGrid();
             updateDateDisplay();
             showLoader(false);
+            scrollToNow();
         }
 
         async function syncEvents() {
-            // Background sync
             try {
                 await apiCall({ 
                     action: 'SYNC_EVENTS', 
                     payload: { token: STATE.user.token, events: STATE.events } 
                 });
-                console.log("Synced");
             } catch(e) {
-                console.error("Sync failed", e);
+                console.error("Background Sync Failed", e);
             }
         }
 
-        // --- GRID RENDER ---
+        // =================================================================
+        // GRID SYSTEM (3 SLOTS PER 15 MIN)
+        // =================================================================
         function renderGrid() {
             const container = document.getElementById('planner-grid');
             container.innerHTML = '';
@@ -444,55 +714,55 @@
             const selectedDateStr = STATE.currentDate.toISOString().split('T')[0];
             const dayEvents = STATE.events.filter(e => e.start.startsWith(selectedDateStr));
 
+            // Generate 00:00 to 23:45
             for (let h = 0; h < 24; h++) {
                 for (let m = 0; m < 60; m += 15) {
                     const timeStr = `${h.toString().padStart(2,'0')}:${m.toString().padStart(2,'0')}`;
-                    const slotId = `${selectedDateStr}T${timeStr}:00.000Z`; // Simplified ISO construct logic
                     
+                    // Container for the slot
                     const div = document.createElement('div');
-                    div.className = 'time-slot border-gray-800';
+                    div.className = 'time-slot';
+                    if (m===0) div.id = `row-${h}`; // Anchor for scrolling
+                    
+                    // Label
                     div.innerHTML = `<span class="time-label">${timeStr}</span>`;
                     
-                    // Click to Create
-                    div.onclick = (e) => {
-                        if(e.target === div) openEventModal(null, h, m);
-                    };
+                    // (+) Button
+                    const addBtn = document.createElement('div');
+                    addBtn.className = 'add-btn-slot';
+                    addBtn.innerText = '(+)';
+                    addBtn.onclick = (e) => { e.stopPropagation(); openEventModal(null, h, m); };
+                    div.appendChild(addBtn);
 
-                    // Render Events
+                    // Find events starting here
                     const slotsEvents = dayEvents.filter(ev => {
-                        // Simple check: does event start here? 
-                        // In robust version, check overlaps.
                         const evTime = new Date(ev.start);
                         return evTime.getHours() === h && evTime.getMinutes() === m;
                     });
 
-                    slotsEvents.forEach((ev, idx) => {
+                    // Render up to 3 events visually (collisions handled by taking up columns)
+                    slotsEvents.forEach((ev) => {
                         const el = document.createElement('div');
-                        el.className = 'event-chip bg-whizzy-input border-l-4 border-whizzy-red text-white';
+                        el.className = `event-chip prio-${ev.priority}`;
                         
-                        // Width logic for overlaps (simplified)
-                        const width = 100 / (slotsEvents.length || 1);
-                        el.style.width = `calc(${width}% - 10px)`;
-                        el.style.left = `calc(40px + ${idx * width}%)`;
-                        
-                        // Height logic based on duration
-                        // Assuming duration is in minutes. 
-                        // But here we need to calc from start/end.
+                        // Height Calc
                         const start = new Date(ev.start);
                         const end = new Date(ev.end);
                         const durationMins = (end - start) / 60000;
-                        el.style.height = `${durationMins * 4}px`; // 1min = 4px height (approx based on 60px slot height / 15min = 4px)
-                        el.style.zIndex = 20;
+                        const heightPx = (durationMins / 15) * 80; // 80px per 15 min slot base height
+                        
+                        el.style.height = `calc(${heightPx}px - 4px)`; // gap adjustment
+                        el.style.zIndex = 10;
 
-                        // Priority Color
-                        const colors = ['#DC2626', '#EA580C', '#EAB308', '#2563EB', '#16A34A', '#525252'];
-                        el.style.borderLeftColor = colors[ev.priority] || colors[5];
-
-                        el.innerHTML = `<div class="font-bold truncate">${ev.title}</div>`;
-                        el.onclick = (e) => {
-                            e.stopPropagation();
-                            openEventModal(ev);
-                        };
+                        // Content
+                        el.innerHTML = `
+                            <div class="font-bold truncate leading-tight">${ev.title}</div>
+                            <div class="chip-actions">
+                                <i class="material-icons text-xs action-icon" onclick="eventAction(event, 'view', '${ev.id}')">visibility</i>
+                                <i class="material-icons text-xs action-icon" onclick="eventAction(event, 'edit', '${ev.id}')">edit</i>
+                                <i class="material-icons text-xs action-icon" onclick="eventAction(event, 'delete', '${ev.id}')">delete</i>
+                            </div>
+                        `;
                         div.appendChild(el);
                     });
 
@@ -501,90 +771,212 @@
             }
         }
 
-        // --- CRUD ---
+        function eventAction(e, type, id) {
+            e.stopPropagation();
+            const evt = STATE.events.find(ev => ev.id === id);
+            if (!evt) return;
+
+            if (type === 'delete') {
+                const isPast = new Date(evt.end) < new Date();
+                if (isPast) return showAlert("Ação Negada", "Não é permitido apagar a história (eventos passados).");
+                
+                showConfirm("Excluir este compromisso?", () => {
+                    STATE.events = STATE.events.filter(x => x.id !== id);
+                    renderGrid();
+                    syncEvents();
+                });
+            } else {
+                // View or Edit opens modal
+                openEventModal(evt);
+            }
+        }
+
+        // =================================================================
+        // EVENT FORM LOGIC
+        // =================================================================
         function openEventModal(eventObj, h, m) {
             const modal = document.getElementById('modal-event');
             const form = document.getElementById('form-event');
             
-            // Check past
-            const isPast = eventObj ? new Date(eventObj.start) < new Date() : new Date(STATE.currentDate).setHours(h,m) < new Date();
-            // Rigorous check: if strictly past (yesterday), readonly. If today passed time, readonly except status.
-            
             modal.classList.remove('hidden');
             
             if (eventObj) {
+                // EDIT MODE
+                const isPast = new Date(eventObj.end) < new Date();
+                
+                document.getElementById('modal-title-text').innerText = isPast ? "Visualizar Histórico" : "Editar Compromisso";
                 document.getElementById('evt-id').value = eventObj.id;
                 document.getElementById('evt-title').value = eventObj.title;
                 document.getElementById('evt-notes').value = eventObj.notes;
                 document.getElementById('evt-priority').value = eventObj.priority;
-                document.getElementById('evt-status').value = eventObj.status;
                 
-                // Populate time (complex in vanilla JS without libs, keeping simple)
+                // Status visible on edit
+                document.getElementById('div-status').classList.remove('hidden');
+                document.getElementById('evt-status').value = eventObj.status;
+
+                // Time calc
                 const d = new Date(eventObj.start);
+                const end = new Date(eventObj.end);
+                const durationMins = (end - d) / 60000;
+                
                 document.getElementById('evt-start-h').value = d.getHours();
                 document.getElementById('evt-start-m').value = d.getMinutes() === 0 ? "00" : d.getMinutes();
                 
-                document.getElementById('btn-delete').classList.remove('hidden');
+                document.getElementById('evt-dur-h').value = Math.floor(durationMins / 60);
+                document.getElementById('evt-dur-m').value = durationMins % 60;
+
+                // Lock fields if past
+                const fieldsToLock = ['evt-title', 'evt-start-h', 'evt-start-m', 'evt-dur-h', 'evt-dur-m'];
+                fieldsToLock.forEach(id => document.getElementById(id).disabled = isPast);
+
             } else {
+                // CREATE MODE
+                document.getElementById('modal-title-text').innerText = "Novo Compromisso";
                 form.reset();
                 document.getElementById('evt-id').value = "";
                 document.getElementById('evt-start-h').value = h;
                 document.getElementById('evt-start-m').value = m === 0 ? "00" : m;
-                document.getElementById('btn-delete').classList.add('hidden');
+                document.getElementById('evt-dur-h').value = 1; // Default 1h
+                document.getElementById('evt-dur-m').value = 0;
+                
+                document.getElementById('div-status').classList.add('hidden'); // Status hidden
+                
+                // Unlock all
+                const fieldsToLock = ['evt-title', 'evt-start-h', 'evt-start-m', 'evt-dur-h', 'evt-dur-m'];
+                fieldsToLock.forEach(id => document.getElementById(id).disabled = false);
             }
         }
 
         function saveEvent(e) {
             e.preventDefault();
             
-            const id = document.getElementById('evt-id').value || Date.now().toString(); // UUID sim
-            const title = document.getElementById('evt-title').value;
+            const id = document.getElementById('evt-id').value || Date.now().toString();
             const h = parseInt(document.getElementById('evt-start-h').value);
             const m = parseInt(document.getElementById('evt-start-m').value);
-            const dur = parseInt(document.getElementById('evt-duration').value);
+            const durH = parseInt(document.getElementById('evt-dur-h').value);
+            const durM = parseInt(document.getElementById('evt-dur-m').value);
             
             const start = new Date(STATE.currentDate);
             start.setHours(h, m, 0, 0);
             
             const end = new Date(start);
-            end.setMinutes(end.getMinutes() + dur);
+            end.setMinutes(end.getMinutes() + (durH * 60) + durM);
             
-            // Block retroactive creation
+            // Check past creation
             if (!document.getElementById('evt-id').value && start < new Date()) {
-                alert("O Whizzy Planner não permite criar compromissos no passado.");
-                return;
+                return showAlert("Erro Temporal", "Não é permitido agendar no passado.");
             }
 
             const newEvt = {
                 id,
-                title,
+                title: document.getElementById('evt-title').value,
                 start: start.toISOString(),
                 end: end.toISOString(),
                 priority: document.getElementById('evt-priority').value,
-                status: document.getElementById('evt-status').value,
+                status: document.getElementById('evt-id').value ? document.getElementById('evt-status').value : 'OPEN',
                 notes: document.getElementById('evt-notes').value,
                 color: 'DEFAULT'
             };
 
-            // Remove old if update
             STATE.events = STATE.events.filter(e => e.id !== id);
             STATE.events.push(newEvt);
             
             closeModal('modal-event');
             renderGrid();
-            syncEvents(); // Send to backend
-        }
-        
-        function deleteEvent() {
-            const id = document.getElementById('evt-id').value;
-            if(!confirm("Excluir?")) return;
-            STATE.events = STATE.events.filter(e => e.id !== id); // Actually delete for now, or status DELETED
-            closeModal('modal-event');
-            renderGrid();
             syncEvents();
         }
 
-        // --- HELPERS ---
+        // =================================================================
+        // PROFILE & SETTINGS
+        // =================================================================
+        function openProfile() {
+            document.getElementById('prof-name').value = STATE.user.name;
+            document.getElementById('prof-photo').value = STATE.user.photo;
+            openModal('modal-profile');
+        }
+
+        async function updateProfileSubmit(e) {
+            e.preventDefault();
+            const p1 = document.getElementById('prof-pwd').value;
+            const p2 = document.getElementById('prof-pwd-conf').value;
+
+            if (p1 && p1 !== p2) return showAlert("Erro", "Novas senhas não conferem.");
+
+            showLoader(true, "Atualizando...");
+            try {
+                const payload = {
+                    token: STATE.user.token,
+                    name: document.getElementById('prof-name').value,
+                    photo: document.getElementById('prof-photo').value,
+                    password: p1 || null
+                };
+                await apiCall({ action: 'UPDATE_PROFILE', payload });
+                
+                STATE.user.name = payload.name;
+                STATE.user.photo = payload.photo;
+                document.getElementById('header-avatar').src = payload.photo || `https://ui-avatars.com/api/?name=${payload.name}&background=DC2626&color=fff`;
+                
+                closeModal('modal-profile');
+                showAlert("Sucesso", "Perfil atualizado.");
+            } catch(err) {
+                showAlert("Erro", err.message);
+            } finally {
+                showLoader(false);
+            }
+        }
+        
+        async function submitForgot() {
+            const email = document.getElementById('forgot-email').value;
+            if(!email) return;
+            try {
+                await apiCall({ action: 'RESET_PASSWORD', payload: { email } });
+                closeModal('modal-forgot');
+                showAlert("E-mail Enviado", "Verifique sua caixa de entrada.");
+            } catch(err) {
+                showAlert("Erro", err.message);
+            }
+        }
+
+        // =================================================================
+        // SEARCH
+        // =================================================================
+        function performSearch() {
+            const q = document.getElementById('search-query').value.toLowerCase();
+            const resContainer = document.getElementById('search-results');
+            resContainer.innerHTML = '';
+            
+            const results = STATE.events.filter(e => 
+                e.title.toLowerCase().includes(q) || e.notes.toLowerCase().includes(q)
+            ).sort((a,b) => new Date(b.start) - new Date(a.start)); // Newest first
+
+            if(results.length === 0) {
+                resContainer.innerHTML = '<p class="text-center text-gray-500 mt-4">Nenhum resultado.</p>';
+                return;
+            }
+
+            results.forEach(ev => {
+                const d = new Date(ev.start);
+                const el = document.createElement('div');
+                el.className = `p-3 mb-2 rounded bg-white dark:bg-whizzy-input border-l-4 prio-${ev.priority} cursor-pointer hover:opacity-80`;
+                el.style.borderLeftColor = getComputedStyle(document.querySelector(`.prio-${ev.priority}`)).backgroundColor;
+                el.innerHTML = `
+                    <div class="font-bold text-black dark:text-white">${ev.title}</div>
+                    <div class="text-xs text-gray-500">${d.toLocaleDateString()} - ${d.toLocaleTimeString().slice(0,5)}</div>
+                    <div class="text-xs text-gray-400 truncate">${ev.notes}</div>
+                `;
+                el.onclick = () => {
+                    STATE.currentDate = new Date(ev.start);
+                    updateDateDisplay();
+                    renderGrid();
+                    closeModal('modal-search');
+                };
+                resContainer.appendChild(el);
+            });
+        }
+
+        // =================================================================
+        // HELPERS
+        // =================================================================
         function showLoader(show, text) {
             const el = document.getElementById('loader');
             if(show) {
@@ -597,10 +989,6 @@
             }
         }
         
-        function closeModal(id) {
-            document.getElementById(id).classList.add('hidden');
-        }
-
         function changeDay(delta) {
             STATE.currentDate.setDate(STATE.currentDate.getDate() + delta);
             updateDateDisplay();
@@ -621,19 +1009,53 @@
             document.getElementById('nav-date-display').innerText = STATE.currentDate.toLocaleDateString('pt-BR');
         }
 
-        function populateTimeSelects() {
+        function toggleTheme() {
+            STATE.isDark = !STATE.isDark;
+            if (STATE.isDark) {
+                document.documentElement.classList.add('dark');
+                localStorage.setItem('whizzy_theme', 'dark');
+                document.getElementById('theme-icon').innerText = 'dark_mode';
+            } else {
+                document.documentElement.classList.remove('dark');
+                localStorage.setItem('whizzy_theme', 'light');
+                document.getElementById('theme-icon').innerText = 'light_mode';
+            }
+        }
+        
+        function toggleSidebar() {
+            const sb = document.getElementById('sidebar');
+            if (sb.classList.contains('w-64')) {
+                sb.classList.remove('w-64');
+                sb.classList.add('w-16');
+                document.querySelectorAll('.sidebar-text').forEach(el => el.classList.add('hidden'));
+            } else {
+                sb.classList.remove('w-16');
+                sb.classList.add('w-64');
+                document.querySelectorAll('.sidebar-text').forEach(el => el.classList.remove('hidden'));
+            }
+        }
+
+        function populateSelects() {
             const selH = document.getElementById('evt-start-h');
+            const durH = document.getElementById('evt-dur-h');
             for(let i=0; i<24; i++) {
                 const opt = document.createElement('option');
                 opt.value = i;
-                opt.innerText = i.toString().padStart(2, '0') + 'h';
-                selH.appendChild(opt);
+                opt.innerText = i.toString().padStart(2, '0');
+                selH.appendChild(opt.cloneNode(true));
+                durH.appendChild(opt); // Reuse loop
             }
         }
         
         function showVibe() {
-            document.getElementById('modal-vibe').classList.remove('hidden');
-            // Logic to fetch video/text based on STATE.vibeId would go here
+            // Mock random vibe
+            const vibes = [
+                "O futuro pertence àqueles que se preparam hoje.",
+                "Foco é dizer não.",
+                "Sua única competição é quem você foi ontem."
+            ];
+            document.getElementById('vibe-text').innerText = vibes[Math.floor(Math.random()*vibes.length)];
+            openModal('modal-vibe');
         }
         
         function toggleMobileMenu() {
@@ -645,17 +1067,12 @@
             }
         }
 
-        // PWA SERVICE WORKER
         function initServiceWorker() {
             if ('serviceWorker' in navigator) {
-                 // Try/Catch adicionado para evitar erros em visualizadores online que bloqueiam SW
                  try {
                     navigator.serviceWorker.register('./sw.js', { scope: './' })
-                        .then(reg => console.log('Service Worker registrado', reg))
-                        .catch(err => console.log('Falha no SW (Normal em preview/http):', err));
-                 } catch (e) {
-                     console.log('Service Worker não suportado neste ambiente (Segurança).');
-                 }
+                        .catch(err => console.log('SW Fail', err));
+                 } catch (e) { console.log('SW Security limitation'); }
             }
         }
     </script>
